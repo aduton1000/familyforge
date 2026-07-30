@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "familyforge"
+version = "0.1.0"
+description = "Pedigree-aware Mendelian + ACMG-style interpretation and dual reporting on a CallForge annotated joint callset."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "Bright Adu" },
+]
+maintainers = [
+  { name = "Bright Adu" },
+]
+keywords = [
+  "bioinformatics",
+  "clinical genomics",
+  "variant interpretation",
+  "ACMG",
+  "Mendelian inheritance",
+  "pedigree",
+  "rare disease",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Healthcare Industry",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX",
+  "Operating System :: MacOS",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+  "cyvcf2>=0.30",
+  "pandas>=1.5",
+  "numpy>=1.23",
+  "jinja2>=3.1",
+  "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/aduton1000/familyforge"
+Repository = "https://github.com/aduton1000/familyforge"
+Documentation = "https://github.com/aduton1000/familyforge/tree/main/docs/manual"
+
+[project.scripts]
+familyforge = "familyforge.cli:main"
+familyforge-clinical-report = "familyforge.clinical_report:main"
+
+[tool.setuptools]
+packages = ["familyforge"]
+
+[tool.setuptools.package-data]
+familyforge = ["templates/*.j2", "config/*.yaml"]

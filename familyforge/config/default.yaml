@@ -1,0 +1,46 @@
+# familyforge default configuration (thresholds + rules). Override with --config.
+
+# ---- genotype quality gates (a genotype below these is treated as no-call) ----
+min_gq: 20            # min genotype quality
+min_dp: 8             # min depth at the genotype
+min_alt_ab: 0.20      # min ALT allele balance to accept a het/hom-alt call
+max_ref_ab_for_hom: 0.10  # hom-alt must have < this REF fraction
+
+# ---- population-frequency thresholds (rare-disease) ----
+af_dominant_max: 0.0001   # max popmax AF for a plausible dominant causal allele
+af_recessive_max: 0.01    # max popmax AF for a plausible recessive causal allele
+af_fields: [gnomADe_AF, gnomADe_AFR_AF, gnomADg_AF, gnomADg_AFR_AF, MAX_AF, gnomAD_AF, gnomAD_AF_afr]  # parsed from CSQ/INFO (AFR = African-ancestry, relevant here)
+
+# ---- consequence severity ----
+lof_consequences: [transcript_ablation, splice_acceptor_variant, splice_donor_variant,
+                   stop_gained, frameshift_variant, start_lost, stop_lost]
+missense_consequences: [missense_variant, inframe_insertion, inframe_deletion,
+                        protein_altering_variant]
+splice_region: [splice_region_variant, splice_donor_5th_base_variant,
+                splice_donor_region_variant, splice_polypyrimidine_tract_variant]
+
+# ---- in-silico damaging thresholds ----
+phylop_conserved: 2.0     # PhyloP above this = conserved position
+# finalist in-silico (supplied via --extra-scores; genome-wide dbNSFP unavailable locally)
+revel_supportive: 0.5     # REVEL >= this = supportive of pathogenic
+revel_strong: 0.7         # REVEL >= this = strong (PP3-strong-ish)
+cadd_high: 25.0           # CADD PHRED >= this = high deleteriousness (~top 0.3%)
+
+# ---- monozygotic twin handling ----
+# sample_ids that are MZ twins must be genotype-CONCORDANT for a candidate to be
+# high-confidence; discordant genotypes across an MZ pair are flagged as artifacts.
+mz_twin_groups: []        # e.g. [[TWIN_1, TWIN_2]]  (set in family config / CLI)
+mz_min_concordance: 0.97  # expected genome-wide concordance for a true MZ pair
+
+# ---- gene-specific rules ----
+# STAT3 dominant-negative hotspot domains (MANE STAT3 NM_139276 protein coords, approx)
+stat3_dbd_range: [321, 465]   # DNA-binding domain
+stat3_sh2_range: [585, 688]   # SH2 domain
+stat3_hotspot_residues: [382, 384, 463, 466, 637, 647]
+
+# genes whose LOF is the disease mechanism (predicted-LOF weighted up under matching model)
+lof_mechanism_genes: [DOCK8, ZNF341, IL6ST, IL6R, PGM3, SPINK5, WAS, FOXP3, IL2RG,
+                      CARMIL2, TYK2, DOCK2, MALT1, BCL10, CD40LG]
+
+# ---- CNV: panel genes where deletions are especially important ----
+cnv_priority_genes: [DOCK8]

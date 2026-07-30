@@ -1,0 +1,43 @@
+# ─── FamilyForge .gitignore ───────────────────────────────────────────────
+
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Packaging / editable-install artifacts
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local run outputs / scratch (never commit patient data or results)
+results/
+results_*/
+out/
+outdir/
+_local/
+scratch/
+
+# Sequence / variant data (inputs are provided at run time, never vendored)
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.bcf
+*.bam
+*.bai
+*.cram
+*.crai
+
+# Editor / OS cruft
+*.swp
+*.swo
+.idea/
+.vscode/
+.DS_Store

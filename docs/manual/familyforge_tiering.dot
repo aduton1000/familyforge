@@ -1,0 +1,47 @@
+// FamilyForge tiering decision flow — how acmg.tier_candidate assigns Tier A/B/C.
+// Render: dot -Tpng -Gdpi=200 familyforge_tiering.dot -o figures/tiering.png
+//         dot -Tpdf familyforge_tiering.dot -o figures/tiering.pdf
+digraph Tiering {
+    rankdir=TB;
+    bgcolor="white";
+    labelloc="t"; fontname="Helvetica-Bold"; fontsize=17;
+    label="FamilyForge tiering logic (acmg.tier_candidate) — evaluated top-to-bottom; first match wins";
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, margin="0.16,0.10"];
+    edge [color="#5f6368", arrowsize=0.8, fontsize=10];
+
+    START [label="Candidate variant\n(model + annotations attached)", shape=oval, fillcolor="#e8f0fe", color="#4285f4"];
+
+    RARE  [label="Rare enough for its model?\n(dominant: max AF ≤ af_dominant_max\nrecessive: max AF ≤ af_recessive_max)\nAND ClinVar not benign", shape=diamond, fillcolor="#fff3e0", color="#fb8c00", fontsize=10];
+    CVP   [label="ClinVar\npathogenic / likely-pathogenic?", shape=diamond, fillcolor="#fff3e0", color="#fb8c00"];
+    LOFAR [label="Biallelic predicted-LoF in a\nLoF-mechanism gene? (recessive model)", shape=diamond, fillcolor="#fff3e0", color="#fb8c00", fontsize=10];
+    HOT   [label="STAT3 dominant-negative\nhotspot (DBD/SH2) missense/LoF\nunder de-novo/dominant?", shape=diamond, fillcolor="#fff3e0", color="#fb8c00", fontsize=10];
+    MISS  [label="Rare damaging missense in a\nTier-1/2 gene + strong in-silico\n(AlphaMissense LP / REVEL≥0.7 / CADD≥25)\nunder a matching model?", shape=diamond, fillcolor="#fff3e0", color="#fb8c00", fontsize=10];
+    LOFB  [label="Predicted-LoF in a panel gene?", shape=diamond, fillcolor="#fff3e0", color="#fb8c00"];
+    MISSB [label="Rare missense + supportive in-silico\n(SIFT/PolyPhen/PhyloP/REVEL≥0.5)?", shape=diamond, fillcolor="#fff3e0", color="#fb8c00", fontsize=10];
+
+    TA [label="TIER A\nlikely actionable / likely-pathogenic candidate", fillcolor="#fdecea", color="#c0392b", style="rounded,filled,bold"];
+    TB [label="TIER B\nstrong VUS (mechanism / inheritance to confirm)", fillcolor="#fff4e5", color="#e67e22", style="rounded,filled,bold"];
+    TC [label="TIER C\nrare in-panel, weaker support (or downgraded:\ncommon in gnomAD / ClinVar benign)", fillcolor="#f2f2f2", color="#777777", style="rounded,filled,bold"];
+
+    CAP [label="Post-hoc caps:\n• ClinVar conflicting + Tier A  ->  Tier B\n• low genotype confidence / MZ-twin discordance + Tier A  ->  Tier B",
+         shape=note, fillcolor="#eef3f9", color="#4285f4", fontsize=10];
+
+    START -> RARE;
+    RARE  -> TC   [label="no", color="#c0392b"];
+    RARE  -> CVP  [label="yes"];
+    CVP   -> TA   [label="yes"];
+    CVP   -> LOFAR[label="no"];
+    LOFAR -> TA   [label="yes"];
+    LOFAR -> HOT  [label="no"];
+    HOT   -> TA   [label="yes"];
+    HOT   -> MISS [label="no"];
+    MISS  -> TA   [label="yes"];
+    MISS  -> LOFB [label="no"];
+    LOFB  -> TB   [label="yes"];
+    LOFB  -> MISSB[label="no"];
+    MISSB -> TB   [label="yes"];
+    MISSB -> TC   [label="no"];
+
+    TA -> CAP [style=dashed, color="#4285f4", constraint=false];
+    { rank=same; TA; TB; TC; }
+}

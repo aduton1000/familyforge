@@ -1,0 +1,45 @@
+# {{ meta.study }} — Clinical Genetics Report
+
+*Hyper-IgE syndrome (HIES) exome investigation · generated {{ meta.date }} · familyforge v{{ version }}*
+
+**Summary.** {% if tierA %}{{ tierA|length }} high-priority (Tier A) candidate finding(s). Leading candidate: **{{ tierA[0].gene }}** ({{ tierA[0].zygosity }}, {{ tierA[0].model|replace('_',' ') }}).{% elif tierB %}No Tier A finding; {{ tierB|length }} Tier B candidate(s) of uncertain significance require review.{% else %}No high-confidence HIES-panel candidate met reporting criteria; see caveats.{% endif %}
+
+## Family analysed
+| Individual | Role | Sex | Sequenced |
+|---|---|---|---|
+{% for m in family %}| {{ m.iid }} | {{ m.role }} | {{ m.sex }} | {{ 'yes' if m.sequenced else 'no (relationship only)' }} |
+{% endfor %}
+{% if mz_groups %}
+**Monozygotic twins:** {{ mz_groups|map('join',' + ')|join('; ') }} — treated as genetic replicates (candidate must be concordant in both).
+{% endif %}
+
+## Priority findings
+{% if tierA or tierB %}{% for r in (tierA + tierB) %}
+### {{ r.gene }} — Tier {{ r.tier }} (confidence: {{ r.confidence }})
+- **Variant:** `{{ r.locus }}` {% if r.rsid and r.rsid != '.' %}({{ r.rsid }}){% endif %} — {{ r.consequence }}, {{ r.hgvsp if r.hgvsp!='.' else r.hgvsc }}
+{% if r.partner %}- **Second allele:** `{{ r.partner }}`
+{% endif %}- **Zygosity / model:** {{ r.zygosity }} · {{ r.model|replace('_',' ') }}
+- **Segregation:** {{ r.segregation }}
+- **Evidence:** ClinVar {{ r.clinvar }} · gnomAD {{ r.gnomad }}{% if r.gnomad_afr and r.gnomad_afr != '.' %} (AFR {{ r.gnomad_afr }}){% endif %} · SIFT {{ r.sift }} · PolyPhen {{ r.polyphen }}
+{% if r.alphamissense and r.alphamissense != '.' %}
+- **In-silico (finalist):** AlphaMissense **{{ r.alphamissense }}** · REVEL {{ r.revel }} · CADD {{ r.cadd }}
+{% endif %}
+- **Tier rationale:** {{ r.tier_reason }}
+- **Interpretation:** {{ r.inheritance_note }}
+{% endfor %}{% else %}No Tier A/B candidate met criteria (see publication report for Tier C).{% endif %}
+
+## Clinical implications & next steps
+{% if top and top.gene == 'DOCK8' %}- **DOCK8 deficiency:** severe infection/malignancy course — evaluate for **HSCT**; confirm deletions by MLPA/aCGH.
+{% endif %}{% if top and top.gene == 'STAT3' %}- **STAT3 (AD-HIES / Job syndrome):** anti-staphylococcal + antifungal prophylaxis; monitor lung/connective-tissue features.
+{% endif %}- Confirm any reported variant orthogonally (Sanger for SNV/indel; MLPA/aCGH for CNV) before clinical action.
+- Consider paternal DNA to confirm inheritance/phase (father not sequenced).
+- Correlate with immunology: IgE, eosinophils, infection spectrum, dental/skeletal signs, platelet count.
+
+## Sample QC
+| Check | Result |
+|---|---|
+{% for k,v in qc.sex.items() %}| Sex — {{ k }} | declared {{ v.declared_sex }}, inferred {{ v.inferred_sex }} (chrX het {{ v.x_het_rate }}) |
+{% endfor %}{% for k,v in qc.pairwise.items() %}| Relatedness — {{ k }} | concordance {{ v.concordance }} over {{ v.n_sites }} sites |
+{% endfor %}
+
+> **Caveats.** Father not sequenced — some inheritance/phase calls are inferred. gnomAD AF is from the VEP cache; genome-wide gnomAD/dbNSFP unavailable, limiting common-variant filtering and some in-silico scores. Tier A/B variants are candidates pending orthogonal confirmation and laboratory ACMG classification. Research analysis, not a diagnostic result.

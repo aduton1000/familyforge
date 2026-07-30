@@ -1,0 +1,70 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>{{ meta.study }} — Clinician Report</title>
+<style>
+ body{font:15px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:900px;margin:2rem auto;padding:0 1rem;color:#1a1a1a}
+ h1{font-size:1.5rem;margin-bottom:.2rem} h2{font-size:1.15rem;border-bottom:2px solid #eee;padding-bottom:.2rem;margin-top:1.6rem}
+ .sub{color:#666;margin-top:0} table{border-collapse:collapse;width:100%;margin:.6rem 0;font-size:14px}
+ th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top} th{background:#f6f8fa}
+ .A{border-left:5px solid #c0392b} .B{border-left:5px solid #e67e22} .C{border-left:5px solid #999}
+ .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;color:#fff}
+ .pA{background:#c0392b}.pB{background:#e67e22}.pC{background:#777}
+ .note{background:#fff8e1;border:1px solid #ffe082;padding:.7rem 1rem;border-radius:6px}
+ .caveat{background:#fdecea;border:1px solid #f5c6cb;padding:.7rem 1rem;border-radius:6px}
+ code{background:#f2f2f2;padding:1px 4px;border-radius:3px}
+</style></head><body>
+<h1>{{ meta.study }} — Clinical Genetics Report</h1>
+<p class="sub">Hyper-IgE syndrome (HIES) exome investigation · generated {{ meta.date }} · familyforge v{{ version }}</p>
+
+<div class="note"><b>Summary.</b>
+{% if tierA %}{{ tierA|length }} high-priority (Tier A) candidate finding(s) identified.
+The leading candidate is <b>{{ tierA[0].gene }}</b> ({{ tierA[0].zygosity }}, {{ tierA[0].model|replace('_',' ') }}).
+{% elif tierB %}No Tier A finding; {{ tierB|length }} Tier B candidate(s) of uncertain significance require review.
+{% else %}No high-confidence candidate in the HIES panel met reporting criteria; see caveats and consider re-phenotyping / extended analysis.
+{% endif %}
+</div>
+
+<h2>Family analysed</h2>
+<table><tr><th>Individual</th><th>Role</th><th>Sex</th><th>Sequenced</th></tr>
+{% for m in family %}<tr><td>{{ m.iid }}</td><td>{{ m.role }}</td><td>{{ m.sex }}</td><td>{{ 'yes' if m.sequenced else 'no (relationship only)' }}</td></tr>{% endfor %}
+</table>
+{% if mz_groups %}<p><b>Monozygotic twins:</b> {{ mz_groups|map('join',' + ')|join('; ') }} — treated as genetic replicates (a candidate must be concordant in both).</p>{% endif %}
+
+<h2>Priority findings</h2>
+{% if tierA or tierB %}
+{% for r in (tierA + tierB) %}
+<table class="{{ r.tier }}"><tr><th style="width:22%">Gene / tier</th>
+ <td><b>{{ r.gene }}</b> &nbsp;<span class="pill p{{ r.tier }}">Tier {{ r.tier }}</span> · confidence: {{ r.confidence }}</td></tr>
+<tr><th>Variant</th><td><code>{{ r.locus }}</code> {% if r.rsid and r.rsid != '.' %}({{ r.rsid }}){% endif %}<br>
+ {{ r.consequence }} · {{ r.hgvsp if r.hgvsp!='.' else r.hgvsc }}</td></tr>
+{% if r.partner %}<tr><th>Second allele</th><td><code>{{ r.partner }}</code></td></tr>{% endif %}
+<tr><th>Zygosity / model</th><td>{{ r.zygosity }} · {{ r.model|replace('_',' ') }}</td></tr>
+<tr><th>Segregation</th><td>{{ r.segregation }}</td></tr>
+<tr><th>Evidence</th><td>ClinVar: {{ r.clinvar }} · gnomAD: {{ r.gnomad }}{% if r.gnomad_afr and r.gnomad_afr != '.' %} (AFR {{ r.gnomad_afr }}){% endif %} · SIFT: {{ r.sift }} · PolyPhen: {{ r.polyphen }}
+{% if r.alphamissense and r.alphamissense != '.' %}<br><b>AlphaMissense: {{ r.alphamissense }}</b> · REVEL: {{ r.revel }} · CADD: {{ r.cadd }}{% endif %}
+<br>{{ r.tier_reason }}</td></tr>
+<tr><th>Interpretation</th><td>{{ r.inheritance_note }}</td></tr>
+</table>
+{% endfor %}
+{% else %}<p>No Tier A/B candidate met criteria. Tier C variants (if any) are listed in the publication report.</p>{% endif %}
+
+<h2>Clinical implications & suggested next steps</h2>
+<ul>
+{% if top and top.gene == 'DOCK8' %}<li><b>DOCK8 deficiency</b> carries a severe infection/malignancy course — evaluate for <b>haematopoietic stem-cell transplant (HSCT)</b>, and confirm any deletion by MLPA/aCGH.</li>{% endif %}
+{% if top and top.gene == 'STAT3' %}<li><b>STAT3 (AD-HIES / Job syndrome)</b> — prophylactic anti-staphylococcal + antifungal management; monitor lung/connective-tissue features.</li>{% endif %}
+<li>Confirm any reported variant by orthogonal method (Sanger for SNV/indel; MLPA/aCGH for CNV) before clinical action.</li>
+<li>Consider obtaining paternal DNA to confirm inheritance / phase (father not sequenced here).</li>
+<li>Correlate with immunology: serum IgE, eosinophils, infection spectrum (bacterial vs viral), dental/skeletal signs, platelet count.</li>
+</ul>
+
+<h2>Sample QC</h2>
+<table><tr><th>Check</th><th>Result</th></tr>
+{% for k,v in qc.sex.items() %}<tr><td>Sex — {{ k }}</td><td>declared {{ v.declared_sex }}, inferred {{ v.inferred_sex }} (chrX het {{ v.x_het_rate }})</td></tr>{% endfor %}
+{% for k,v in qc.pairwise.items() %}<tr><td>Relatedness — {{ k }}</td><td>genotype concordance {{ v.concordance }} over {{ v.n_sites }} sites</td></tr>{% endfor %}
+</table>
+
+<div class="caveat"><b>Caveats.</b> Father not sequenced — some inheritance/phase calls are inferred and unconfirmed.
+gnomAD allele frequencies are from the VEP cache; genome-wide gnomAD/dbNSFP were unavailable, so
+common-variant filtering and some in-silico scores are limited. Tier A/B variants are candidates
+pending orthogonal confirmation and ACMG classification by a clinical laboratory. This report is a
+research analysis, not a diagnostic result.</div>
+</body></html>

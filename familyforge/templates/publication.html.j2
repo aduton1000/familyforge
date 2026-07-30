@@ -1,0 +1,81 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>{{ meta.study }} — Publication Report</title>
+<style>
+ body{font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:1000px;margin:2rem auto;padding:0 1rem;color:#1a1a1a}
+ h1{font-size:1.6rem} h2{font-size:1.2rem;border-bottom:2px solid #eee;padding-bottom:.2rem;margin-top:1.8rem} h3{font-size:1.05rem;margin-top:1.2rem}
+ .sub{color:#666} table{border-collapse:collapse;width:100%;margin:.6rem 0;font-size:13px;overflow-x:auto;display:block}
+ th,td{border:1px solid #ddd;padding:5px 7px;text-align:left;vertical-align:top} th{background:#f6f8fa}
+ .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;color:#fff}
+ .pA{background:#c0392b}.pB{background:#e67e22}.pC{background:#777}
+ /* ACMG classification colour convention (benign -> pathogenic heat scale) */
+ .acmg{display:inline-block;padding:1px 7px;border-radius:9px;font-size:10px;font-weight:600;color:#fff;white-space:nowrap}
+ .acmg.P{background:#b02a37}.acmg.LP{background:linear-gradient(90deg,#f76707,#d6252f)}
+ .acmg.VUS{background:#e6a817;color:#3a2c07}.acmg.LB{background:#66a80f}.acmg.B{background:#2f9e44}
+ .legend{margin:6px 0;font-size:11px;color:#666}
+ .legend .acmg{margin:0 2px}
+ code{background:#f2f2f2;padding:1px 4px;border-radius:3px;font-size:12px}
+ .lim{background:#f7f7f9;border:1px solid #ddd;border-radius:6px;padding:.6rem 1rem}
+</style></head><body>
+<h1>{{ meta.study }}: Whole-Exome Analysis of Suspected Hyper-IgE Syndrome</h1>
+<p class="sub">Detailed / publication report · generated {{ meta.date }} · familyforge v{{ version }} over CallForge</p>
+
+<h2>Key result</h2>
+<p>{% if tierA %}Identified <b>{{ tierA|length }} Tier A</b> candidate(s). Leading candidate: {{ tierA[0].zygosity }} variant in <b>{{ tierA[0].gene }}</b> ({{ tierA[0].consequence }}) under a {{ tierA[0].model|replace('_',' ') }} model.{% elif tierB %}No Tier A variant; {{ tierB|length }} Tier B VUS reported.{% else %}No HIES-panel variant met Tier A/B criteria.{% endif %}
+Candidate totals: <b>{{ tierA|length }}</b> Tier A · <b>{{ tierB|length }}</b> Tier B · <b>{{ tierC|length }}</b> Tier C.</p>
+<div class="legend">Classification colour scale:
+ <span class="acmg B">Benign</span><span class="acmg LB">Likely benign</span><span class="acmg VUS">VUS</span><span class="acmg LP">Likely pathogenic</span><span class="acmg P">Pathogenic</span></div>
+
+<h2>Methods (summary)</h2>
+<p><b>Samples:</b> Twist Human Core Exome 2.0 (+RefSeq), PE151, Illumina, GRCh38.
+<b>Primary pipeline (CallForge):</b> bwa-mem2 → MarkDuplicates → GATK BQSR (dbSNP b157) → per-sample QC gate → GATK HaplotypeCaller/GenomicsDB/GenotypeGVCFs joint calling + hard-filter → CNVkit → VEP (cache v112: consequence/MANE/HGVS/SIFT/PolyPhen/gnomAD AF) + vcfanno (ClinVar, PhyloP).
+<b>Interpretation (familyforge):</b> panel restriction ({{ meta.n_panel_genes }} HIES genes), pedigree Mendelian models (de novo/dominant, AR-hom, compound-het, X-linked; father not sequenced → paternal phase inferred), MZ-twin concordance, ACMG-style tiering (dominant AF ≤ {{ meta.af_dominant_max }}, recessive AF ≤ {{ meta.af_recessive_max }}).</p>
+
+<h2>Tier A — likely actionable</h2>
+{% if tierA %}<table><tr><th>Gene</th><th>Classification</th><th>Variant</th><th>Consequence</th><th>HGVSp</th><th>Zygosity</th><th>Model</th><th>ClinVar</th><th>gnomAD</th><th>AlphaMissense</th><th>REVEL</th><th>CADD</th><th>Rationale</th></tr>
+{% for r in tierA %}<tr><td><b>{{ r.gene }}</b></td><td><span class="acmg {{ r.acmg_class }}">{{ r.acmg_label }}</span></td><td><code>{{ r.locus }}</code></td><td>{{ r.consequence }}</td><td>{{ r.hgvsp }}</td><td>{{ r.zygosity }}</td><td>{{ r.model|replace('_',' ') }}</td><td>{{ r.clinvar }}</td><td>{{ r.gnomad }}</td><td>{{ r.alphamissense }}</td><td>{{ r.revel }}</td><td>{{ r.cadd }}</td><td>{{ r.tier_reason }}</td></tr>{% endfor %}
+</table>{% else %}<p>None.</p>{% endif %}
+
+<h2>Tier B — strong VUS</h2>
+{% if tierB %}<table><tr><th>Gene</th><th>Classification</th><th>Variant</th><th>Consequence</th><th>HGVSp</th><th>Zygosity</th><th>Model</th><th>ClinVar</th><th>gnomAD</th><th>AlphaMissense</th><th>REVEL</th><th>CADD</th><th>SIFT/PolyPhen</th></tr>
+{% for r in tierB %}<tr><td>{{ r.gene }}</td><td><span class="acmg {{ r.acmg_class }}">{{ r.acmg_label }}</span></td><td><code>{{ r.locus }}</code></td><td>{{ r.consequence }}</td><td>{{ r.hgvsp }}</td><td>{{ r.zygosity }}</td><td>{{ r.model|replace('_',' ') }}</td><td>{{ r.clinvar }}</td><td>{{ r.gnomad }}</td><td>{{ r.alphamissense }}</td><td>{{ r.revel }}</td><td>{{ r.cadd }}</td><td>{{ r.sift }} / {{ r.polyphen }}</td></tr>{% endfor %}
+</table>{% else %}<p>None.</p>{% endif %}
+
+<h2>Tier C — other in-panel observations</h2>
+{% if tierC %}<table><tr><th>Gene</th><th>Classification</th><th>Variant</th><th>Consequence</th><th>Model</th><th>ClinVar</th><th>gnomAD</th><th>Reason</th></tr>
+{% for r in tierC %}<tr><td>{{ r.gene }}</td><td><span class="acmg {{ r.acmg_class }}">{{ r.acmg_label }}</span></td><td><code>{{ r.locus }}</code></td><td>{{ r.consequence }}</td><td>{{ r.model|replace('_',' ') }}</td><td>{{ r.clinvar }}</td><td>{{ r.gnomad }}</td><td>{{ r.tier_reason }}</td></tr>{% endfor %}
+</table>{% else %}<p>None.</p>{% endif %}
+
+<h2>ACMG-style criteria (candidate-level, provisional)</h2>
+<p class="sub">Research assessment, not a formal clinical ACMG classification (which requires a qualified laboratory, orthogonal confirmation, and where applicable functional + parental data).</p>
+<table><tr><th>Code</th><th>Meaning</th><th>Applies here?</th></tr>
+<tr><td>PVS1</td><td>null variant in a LoF-mechanism gene</td><td>only for predicted-LoF candidates</td></tr>
+<tr><td>PS2</td><td>de novo (confirmed)</td><td><i>partial</i> — de-novo pattern seen, father not sequenced (unconfirmed)</td></tr>
+<tr><td>PS3</td><td>functional studies show damage</td><td>not done — <b>recommended</b></td></tr>
+<tr><td>PM2</td><td>absent/rare in gnomAD</td><td>yes for gnomAD-absent candidates</td></tr>
+<tr><td>PP3</td><td>computational evidence of damage</td><td><b>strong</b> where AlphaMissense=likely_pathogenic, REVEL&ge;0.7, CADD&ge;25 agree</td></tr>
+<tr><td>PP4</td><td>phenotype specific for the gene</td><td>yes (HIES phenotype &harr; panel gene)</td></tr>
+</table>
+
+<h2>Quality control</h2>
+<h3>Sex inference (chrX heterozygosity)</h3>
+<table><tr><th>Sample</th><th>Declared</th><th>Inferred</th><th>chrX het-rate</th><th>chrX sites</th></tr>
+{% for k,v in qc.sex.items() %}<tr><td>{{ k }}</td><td>{{ v.declared_sex }}</td><td>{{ v.inferred_sex }}</td><td>{{ v.x_het_rate }}</td><td>{{ v.x_sites }}</td></tr>{% endfor %}</table>
+<h3>Pairwise genotype concordance (relatedness / MZ / swap check)</h3>
+<table><tr><th>Pair</th><th>Concordance</th><th>Shared sites</th></tr>
+{% for k,v in qc.pairwise.items() %}<tr><td>{{ k }}</td><td>{{ v.concordance }}</td><td>{{ v.n_sites }}</td></tr>{% endfor %}</table>
+{% if mz_groups %}<p class="sub">MZ pair expected concordance ≈1.0; first-degree ≈0.5–0.7 over panel sites.</p>{% endif %}
+
+<h2>HIES gene panel ({{ meta.n_panel_genes }} genes)</h2>
+<table><tr><th>Gene</th><th>Tier</th><th>Inheritance</th><th>Mechanism</th><th>Notes</th></tr>
+{% for g,info in panel.items() %}<tr><td>{{ g }}</td><td>{{ info.tier }}</td><td>{{ info.inheritance|join(',') }}</td><td>{{ info.mechanism|join(',') }}</td><td>{{ info.notes }}</td></tr>{% endfor %}</table>
+
+<h2>Limitations</h2>
+<div class="lim"><ul>
+<li><b>Father not sequenced</b> — paternal alleles / compound-het phase inferred; de-novo vs paternal transmission indistinguishable without paternal DNA.</li>
+<li><b>Population frequency</b> from VEP cache; genome-wide gnomAD v4 unavailable → limited African-ancestry AF filtering.</li>
+<li><b>In-silico</b>: genome-wide dbNSFP unavailable; SIFT/PolyPhen + PhyloP only — re-score finalists with CADD/REVEL/AlphaMissense.</li>
+<li><b>CNV</b>: CNVkit with a 4-sample reference — confirm events (esp. DOCK8) by MLPA/aCGH.</li>
+<li>Tier A/B are research candidates pending laboratory ACMG classification + orthogonal validation.</li>
+</ul></div>
+<p class="sub">VCF: <code>{{ meta.vcf }}</code> · Panel: <code>{{ meta.panel }}</code> · {{ meta.n_cnv_rows }} CNV call(s) reviewed. Provenance in CallForge <code>provenance.json</code>.</p>
+</body></html>

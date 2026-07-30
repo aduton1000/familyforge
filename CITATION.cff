@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use FamilyForge, please cite it as below."
+title: "FamilyForge: pedigree-aware Mendelian and ACMG-style interpretation of a family callset (VCF + pedigree + panel → ranked candidates + reports)"
+abstract: >-
+  FamilyForge is a disease-agnostic, pure-Python clinical variant-interpretation tool
+  that takes a multi-sample annotated VCF, a PED pedigree, and a gene panel for one
+  family and produces segregation-checked candidate variants under Mendelian inheritance
+  models (de novo/dominant, autosomal-recessive homozygous, compound heterozygous, and
+  X-linked recessive), pragmatic ACMG-style A/B/C tiering, a CNV deletion cross-check,
+  genotype-based relatedness/sex QC, and audience-specific clinician, publication, and
+  letterhead clinical reports. It is the interpretation counterpart to the CallForge
+  analysis pipeline and consumes its annotated joint callset (and optional cnv_calls.tsv
+  and provenance.json).
+authors:
+  - family-names: "Adu"
+    given-names: "Bright"
+    affiliation: "Genomics & Bioinformatics Core, Noguchi Memorial Institute for Medical Research, University of Ghana, Legon, Ghana"
+version: 0.1.0
+date-released: "2026-07-30"
+license: MIT
+type: software
+keywords:
+  - bioinformatics
+  - clinical genomics
+  - variant interpretation
+  - ACMG classification
+  - Mendelian inheritance
+  - pedigree analysis
+  - rare disease
+references:
+  - type: software
+    title: "CallForge: a targeted-capture germline analysis pipeline"
+    notes: "Upstream analysis pipeline; FamilyForge consumes its annotated joint VCF, cnv_calls.tsv, and provenance.json."
+  - type: software
+    title: "CaptureForge: hybridization-capture probe design pipeline"
+    notes: "Design-stage pipeline at the head of the forge family (CaptureForge -> CallForge -> FamilyForge)."

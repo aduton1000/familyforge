@@ -1,0 +1,136 @@
+// FamilyForge architecture DAG — inputs -> ingest -> analysis modules -> reporting -> outputs.
+// Colour-coded by module group, with the two console entry points and a legend.
+// Render: dot -Tpng -Gdpi=200 familyforge_dag.dot -o figures/architecture.png
+//         dot -Tpdf familyforge_dag.dot -o figures/architecture.pdf
+digraph FamilyForge {
+    rankdir=TB;
+    bgcolor="white";
+    labelloc="t";
+    fontname="Helvetica-Bold"; fontsize=20;
+    label="FamilyForge — pedigree-aware interpretation of a family callset\n(annotated VCF + pedigree + panel  ->  ranked candidates + clinician / publication / clinical reports)";
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, margin="0.16,0.09"];
+    edge [color="#5f6368", arrowsize=0.8];
+    compound=true;
+
+    // ─────────────────────── external inputs (cylinders) ───────────────────────
+    subgraph cluster_inputs {
+        label="Inputs (provided per family; never hardcoded)"; fontsize=13; fontname="Helvetica-Bold";
+        style="rounded"; color="#f9a825"; bgcolor="#fffdf5";
+        node [shape=cylinder, style="filled", fillcolor="#fffde7", color="#f9a825", fontsize=10];
+        VCF   [label="Annotated joint VCF.gz\nCallForge stage-11 output\n(VEP CSQ · ClinVar · gnomAD · PhyloP)"];
+        PED   [label="Pedigree (6-col PED)\nfamily · iid · father · mother\nsex · phenotype"];
+        PANEL [label="Gene panel TSV\ngene · tier · inheritance\nmechanism · omim · notes"];
+        CFG   [label="Config YAML (optional)\nthresholds + gene rules\n(overrides default.yaml)"];
+        CNVIN [label="cnv_calls.tsv (optional)\nCallForge stage-8 CNV calls"];
+        EXTRA [label="extra-scores TSV (optional)\nCADD · REVEL · AlphaMissense\nfor finalist variants"];
+        PROV  [label="provenance.json (optional)\nupstream tool / DB versions"];
+    }
+
+    // ─────────────────────── ingest / parsing layer ───────────────────────
+    subgraph cluster_ingest {
+        label="Ingest & parse  (inputs.py · vcf_io.py)"; fontsize=13; fontname="Helvetica-Bold";
+        style="rounded"; color="#4285f4"; bgcolor="#f3f7ff";
+        node [fillcolor="#e8f0fe", color="#4285f4"];
+        NORM  [label="_normalise_vcf (cli.py)\nbcftools norm -m-any\n(split multiallelics)"];
+        LOADV [label="load_variants (vcf_io.py)\npick_consequence · AF · ClinVar · PhyloP\nper-sample GT/DP/AD/GQ + quality gate\n-> Variant objects (panel-restricted)"];
+        LOADP [label="load_pedigree / load_panel /\nload_config / load_cnv_calls /\nload_extra_scores (inputs.py)\n-> Family · panel · cfg"];
+    }
+
+    // ─────────────────────── analysis modules ───────────────────────
+    subgraph cluster_analysis {
+        label="Interpretation modules"; fontsize=13; fontname="Helvetica-Bold";
+        style="rounded"; color="#673ab7"; bgcolor="#f6f2fb";
+
+        INH  [label="inheritance.py\nevaluate_variant:\nde-novo/dominant · AR-hom · X-linked\nevaluate_compound_het: AR comp-het (trans)\nMZ-twin concordance · segregation strings",
+              fillcolor="#ede7f6", color="#673ab7"];
+        CNVM [label="cnv.py\ncnv_candidates:\ndeletions overlapping panel genes\n(priority genes e.g. DOCK8)",
+              fillcolor="#e0f7fa", color="#00acc1"];
+        ACMG [label="acmg.py\ntier_candidate:\nClinVar · AF · consequence · in-silico\nconservation · gene mechanism · segregation\n-> Tier A / B / C + evidence trail",
+              fillcolor="#fff3e0", color="#fb8c00"];
+        QC   [label="inheritance.relatedness_sex_qc\npairwise genotype concordance\n+ chrX-het sex inference",
+              fillcolor="#f3e5f5", color="#8e24aa"];
+    }
+
+    // ─────────────────────── reporting layer ───────────────────────
+    subgraph cluster_report {
+        label="Reporting  (report.py · clinical_report.py · templates/*.j2)"; fontsize=13; fontname="Helvetica-Bold";
+        style="rounded"; color="#137333"; bgcolor="#f1f8f3";
+        node [fillcolor="#e6f4ea", color="#34a853"];
+        CTX  [label="report.build_context\nrank_candidates · _var_row · classify\n-> ranked rows + tier buckets + QC"];
+        RND  [label="report.render (Jinja2)\nclinician + publication templates"];
+        CLIN [label="clinical_report.py\nletterhead engine (data-driven)\nlab_config + report_config + candidates.json",
+              fillcolor="#d7f0e3", color="#137333"];
+    }
+
+    // ─────────────────────── outputs ───────────────────────
+    subgraph cluster_outputs {
+        label="Outputs (outdir/)"; fontsize=13; fontname="Helvetica-Bold";
+        style="rounded"; color="#546e7a"; bgcolor="#f5f7f8";
+        node [shape=note, fillcolor="#eceff1", color="#546e7a", fontsize=10];
+        O_CLIN [label="clinician_report.{html,md}\nconcise · actionable"];
+        O_PUB  [label="publication_report.{html,md}\nfull methods · QC · evidence · limits"];
+        O_JSON [label="candidates.json\nmachine-readable rows + QC"];
+        O_LET  [label="clinical_report.{html,md}\nletterhead PDF via headless Chrome"];
+    }
+
+    // ─────────────────────── entry points ───────────────────────
+    CLI  [label="familyforge  (CLI entry point, cli.py:main)\norchestrates the whole run", shape=box,
+          style="rounded,filled,bold", fillcolor="#fdecea", color="#c0392b", fontsize=12];
+    CLI2 [label="familyforge-clinical-report\n(clinical_report.py:main)", shape=box,
+          style="rounded,filled", fillcolor="#fdecea", color="#c0392b", fontsize=11];
+
+    // ─────────────────────── edges: inputs -> ingest ───────────────────────
+    VCF   -> NORM  [color="#f9a825"];
+    NORM  -> LOADV [color="#f9a825"];
+    PED   -> LOADP [color="#f9a825"];
+    PANEL -> LOADP [color="#f9a825"];
+    CFG   -> LOADP [color="#f9a825", style=dashed, label="override", fontsize=8];
+    CNVIN -> LOADP [color="#f9a825", style=dashed];
+    EXTRA -> LOADP [color="#f9a825", style=dashed];
+
+    // ingest -> analysis
+    LOADV -> INH;
+    LOADV -> CNVM [style=invis];
+    LOADP -> INH  [label="Family · panel", fontsize=8];
+    LOADP -> CNVM [label="cnv rows · panel", fontsize=8];
+    LOADV -> QC;
+    EXTRA -> ACMG [color="#f9a825", style=dashed, constraint=false, label="finalist scores", fontsize=8];
+
+    // analysis chaining
+    INH  -> ACMG [label="candidates", fontsize=8];
+    CNVM -> ACMG [style=dashed, label="CNV tiered directly", fontsize=8];
+
+    // analysis -> reporting
+    ACMG -> CTX;
+    QC   -> CTX  [label="qc", fontsize=8];
+    CTX  -> RND;
+    CTX  -> O_JSON;
+    RND  -> O_CLIN;
+    RND  -> O_PUB;
+
+    // letterhead engine consumes candidates.json + PED
+    O_JSON -> CLIN [style=dashed, color="#137333", label="candidates.json + PED", fontsize=8];
+    PROV   -> CTX  [color="#f9a825", style=dashed, constraint=false, label="methods", fontsize=8];
+    CLIN   -> O_LET;
+
+    // entry points orchestrate
+    CLI  -> NORM  [style=dotted, color="#c0392b", arrowhead=none, constraint=false];
+    CLI  -> CTX   [style=dotted, color="#c0392b", arrowhead=none, constraint=false];
+    CLI2 -> CLIN  [style=dotted, color="#c0392b", arrowhead=none, constraint=false];
+
+    // ─────────────────────── legend ───────────────────────
+    subgraph cluster_legend {
+        label="Module groups"; fontsize=12; fontname="Helvetica-Bold"; style="rounded"; color="#bbbbbb";
+        node [shape=box, style="rounded,filled", fontsize=9, width=2.4];
+        L0 [label="Inputs (per family)", fillcolor="#fffde7", color="#f9a825", shape=cylinder];
+        L1 [label="Ingest / parse", fillcolor="#e8f0fe", color="#4285f4"];
+        L2 [label="Inheritance models", fillcolor="#ede7f6", color="#673ab7"];
+        L3 [label="CNV cross-check", fillcolor="#e0f7fa", color="#00acc1"];
+        L4 [label="ACMG-style tiering", fillcolor="#fff3e0", color="#fb8c00"];
+        L5 [label="Genotype QC", fillcolor="#f3e5f5", color="#8e24aa"];
+        L6 [label="Reporting", fillcolor="#e6f4ea", color="#34a853"];
+        L7 [label="Outputs", fillcolor="#eceff1", color="#546e7a", shape=note];
+        L8 [label="Console entry point", fillcolor="#fdecea", color="#c0392b"];
+        L0->L1->L2->L3->L4->L5->L6->L7->L8 [style=invis];
+    }
+}
