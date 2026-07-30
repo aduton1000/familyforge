@@ -1,5 +1,17 @@
 # familyforge default configuration (thresholds + rules). Override with --config.
 
+# ---- report content (disease-agnostic; override per study via --config) ----
+# These drive the wording of the clinician / publication reports so nothing about the
+# disease or panel is hardcoded in the templates. Supply your own via --config.
+disease_name: "the suspected condition"   # e.g. "Hyper-IgE syndrome"
+panel_name: "custom"                        # e.g. "inborn-errors-of-immunity"
+# gene -> short clinical / counseling note, emitted in the clinician report for the top
+# candidate gene when present (nothing is emitted for a gene without a note).
+# EXAMPLES ONLY — replace with notes appropriate to YOUR panel/disease.
+gene_clinical_notes:
+  DOCK8: "biallelic loss causes a combined immunodeficiency with severe infection/malignancy risk; evaluate for haematopoietic stem-cell transplant and confirm any deletion by MLPA/aCGH."
+  STAT3: "dominant-negative variants cause autosomal-dominant hyper-IgE (Job) syndrome; consider anti-staphylococcal/antifungal prophylaxis and monitor lung/connective-tissue features."
+
 # ---- genotype quality gates (a genotype below these is treated as no-call) ----
 min_gq: 20            # min genotype quality
 min_dp: 8             # min depth at the genotype

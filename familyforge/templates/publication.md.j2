@@ -1,9 +1,9 @@
-# {{ meta.study }}: Whole-Exome Analysis of Suspected Hyper-IgE Syndrome — Detailed Report
+# {{ meta.study }}: family-based variant interpretation — {{ meta.disease_name or 'Mendelian disorder' }} — Detailed Report
 
 *Generated {{ meta.date }} · familyforge v{{ version }} (interpretation layer over CallForge)*
 
 ## Abstract / key result
-{% if tierA %}This analysis identified **{{ tierA|length }} Tier A** candidate variant(s) consistent with the clinical presentation of Hyper-IgE syndrome (HIES). The leading candidate is a {{ tierA[0].zygosity }} variant in **{{ tierA[0].gene }}** ({{ tierA[0].consequence }}), segregating under a {{ tierA[0].model|replace('_',' ') }} model.{% elif tierB %}No Tier A variant was identified; {{ tierB|length }} Tier B variant(s) of uncertain significance are reported.{% else %}No HIES-panel variant met Tier A/B reporting criteria under the applied models and thresholds.{% endif %}
+{% if tierA %}This analysis identified **{{ tierA|length }} Tier A** candidate variant(s) consistent with the clinical presentation of {{ meta.disease_name or 'the suspected condition' }}. The leading candidate is a {{ tierA[0].zygosity }} variant in **{{ tierA[0].gene }}** ({{ tierA[0].consequence }}), segregating under a {{ tierA[0].model|replace('_',' ') }} model.{% elif tierB %}No Tier A variant was identified; {{ tierB|length }} Tier B variant(s) of uncertain significance are reported.{% else %}No {{ meta.panel_name or 'custom' }}-panel variant met Tier A/B reporting criteria under the applied models and thresholds.{% endif %}
 
 ## Methods
 
@@ -14,7 +14,7 @@
 **Primary pipeline (CallForge).** FASTQ reads were aligned to GRCh38 (no-alt) with bwa-mem2, duplicate-marked, and base-recalibrated (GATK BQSR, dbSNP b157 known-sites). Per-sample QC gating (mean target depth, on-target fraction, duplication, sex) preceded joint genotyping (GATK HaplotypeCaller → GenomicsDB → GenotypeGVCFs) and hard-filtering. Copy-number was called with CNVkit. Variants were annotated with Ensembl VEP (cache v112; consequence, MANE/canonical transcript, HGVS, SIFT, PolyPhen, gnomAD exome/genome allele frequencies) and vcfanno (ClinVar {{ meta.provenance.get('clinvar_date','2026-06') if meta.provenance else '2026-06' }}, PhyloP 100-way).
 {% if meta.provenance %}Tool/DB versions: see provenance (`{{ meta.provenance.get('git_commit','n/a') }}`).{% endif %}
 
-**Interpretation (familyforge).** The multi-sample annotated VCF was normalised (biallelic split) and restricted to a curated HIES/high-IgE inborn-error-of-immunity panel of {{ meta.n_panel_genes }} genes. Pedigree-aware Mendelian models were applied — de novo/dominant, autosomal-recessive homozygous, compound heterozygous (maternal/paternal phase inferred; father not sequenced), and X-linked recessive — with per-genotype quality gates (GQ ≥ {{ '{:.0f}'.format(0) }}, see config) and MZ-twin concordance. Candidates were tiered by an ACMG-style rubric combining ClinVar, population frequency (dominant ≤ {{ meta.af_dominant_max }}, recessive ≤ {{ meta.af_recessive_max }}), predicted consequence, in-silico damage, conservation, gene disease-mechanism, and segregation.
+**Interpretation (familyforge).** The multi-sample annotated VCF was normalised (biallelic split) and restricted to the curated {{ meta.panel_name or 'custom' }} panel of {{ meta.n_panel_genes }} genes. Pedigree-aware Mendelian models were applied — de novo/dominant, autosomal-recessive homozygous, compound heterozygous (parental phase inferred where a parent was not sequenced), and X-linked recessive — with per-genotype quality gates (GQ ≥ {{ '{:.0f}'.format(0) }}, see config) and MZ-twin concordance. Candidates were tiered by an ACMG-style rubric combining ClinVar, population frequency (dominant ≤ {{ meta.af_dominant_max }}, recessive ≤ {{ meta.af_recessive_max }}), predicted consequence, in-silico damage, conservation, gene disease-mechanism, and segregation.
 
 ## Results
 
@@ -70,11 +70,11 @@ laboratory, orthogonal confirmation, and — where applicable — functional and
 | Code | Meaning | Applies here? |
 |---|---|---|
 | PVS1 | null variant in a LoF-mechanism gene | only for predicted-LoF candidates |
-| PS2 | de novo (confirmed) | *partial* — de novo pattern seen, but father not sequenced (unconfirmed) |
+| PS2 | de novo (confirmed) | *partial* — de novo pattern seen, but unconfirmed where a parent was not sequenced |
 | PS3 | functional studies show damage | not done — **recommended** |
 | PM2 | absent/rare in gnomAD | yes for gnomAD-absent candidates |
 | PP3 | computational evidence of damage | **strong** where AlphaMissense=likely_pathogenic, REVEL≥0.7, CADD≥25 all agree |
-| PP4 | phenotype specific for the gene | yes (HIES phenotype ↔ panel gene) |
+| PP4 | phenotype specific for the gene | yes where the phenotype is consistent with the panel gene |
 
 ## Quality control
 **Sex inference (chrX heterozygosity):**
@@ -90,17 +90,17 @@ laboratory, orthogonal confirmation, and — where applicable — functional and
 {% endfor %}
 {% if mz_groups %}A monozygotic pair is expected to show concordance ≈1.0; a first-degree (parent–offspring / DZ-sib) pair ≈0.5–0.7 over these panel sites.{% endif %}
 
-## HIES gene panel used ({{ meta.n_panel_genes }} genes)
+## {{ meta.panel_name or 'custom' }} gene panel used ({{ meta.n_panel_genes }} genes)
 | Gene | Tier | Inheritance | Mechanism | Notes |
 |---|---|---|---|---|
 {% for g,info in panel.items() %}| {{ g }} | {{ info.tier }} | {{ info.inheritance|join(',') }} | {{ info.mechanism|join(',') }} | {{ info.notes }} |
 {% endfor %}
 
 ## Limitations
-- **Father not sequenced:** paternal alleles and compound-het phase are inferred, not confirmed; de-novo events cannot be distinguished from paternal transmission without paternal DNA.
-- **Population frequency:** gnomAD allele frequencies were taken from the VEP cache; a genome-wide gnomAD v4 VCF was not available locally, so ancestry-specific (African) frequency filtering is limited — relevant for this family's ancestry.
-- **In-silico:** genome-wide dbNSFP (REVEL/CADD/AlphaMissense) was unavailable; scoring relied on SIFT/PolyPhen and PhyloP. Final candidates should be re-scored with CADD/REVEL/AlphaMissense.
-- **CNV:** exome CNV calls (CNVkit) with a 4-sample reference are sensitive to large events but require orthogonal confirmation (MLPA/aCGH), particularly for DOCK8.
+- **Unsequenced parent(s):** the corresponding alleles and compound-het phase are inferred, not confirmed; de-novo events cannot be distinguished from transmission without the parent's DNA.
+- **Population frequency:** allele frequencies are bounded by the upstream annotation databases; where a genome-wide gnomAD is unavailable, ancestry-specific frequency filtering is limited.
+- **In-silico:** where genome-wide dbNSFP (REVEL/CADD/AlphaMissense) is unavailable, scoring relies on SIFT/PolyPhen and PhyloP. Final candidates should be re-scored with CADD/REVEL/AlphaMissense (supplied via `--extra-scores`).
+- **CNV:** copy-number calls come from an upstream caller and require orthogonal confirmation (MLPA/aCGH), particularly for configured priority genes.
 - All Tier A/B variants are research candidates pending clinical-laboratory ACMG classification and orthogonal validation.
 
 ## Data & reproducibility

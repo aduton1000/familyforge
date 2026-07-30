@@ -39,11 +39,11 @@ multidisciplinary review or a case report.
 > not diagnoses: every Tier A/B finding is explicitly pending orthogonal confirmation
 > (Sanger / MLPA / aCGH), functional validation, and formal ACMG classification by an
 > accredited laboratory before any clinical action. It is **implemented and verified
-> end-to-end on a synthetic self-test** (§12). The bundled gene-specific rules and the
-> default report framing were developed around a hyper-IgE-syndrome (HIES) inborn-error-of-
-> immunity use case, but the engine is disease-agnostic: the **panel and pedigree are
-> inputs**, never hardcoded. §11 explains exactly which parts are generic and which carry
-> the HIES framing.
+> end-to-end on a synthetic self-test** (§12). The bundled gene-specific tiering rules and
+> example configuration were developed around an inborn-error-of-immunity use case, but the
+> tool is **fully disease-agnostic**: the **panel and pedigree are inputs**, never hardcoded,
+> and all report wording (disease name, panel name, per-gene clinical notes) is supplied
+> through configuration — nothing disease-specific is baked into the templates (§11).
 
 # 2. Concepts
 
@@ -477,13 +477,21 @@ with `--config your.yaml`; your keys are merged on top of the defaults.
 | `stat3_hotspot_residues` | (list) | Individual STAT3 hotspot residues |
 | `lof_mechanism_genes` | (list) | Genes whose LoF is the disease mechanism |
 | `cnv_priority_genes` | `[DOCK8]` | Panel genes where deletions are especially important |
+| `disease_name` | `the suspected condition` | Report wording — the disease under investigation |
+| `panel_name` | `custom` | Report wording — the panel's name |
+| `gene_clinical_notes` | (map) | Gene → short clinical/counseling note emitted for the top candidate |
 
 The `af_fields` default deliberately includes African-ancestry fields
 (`gnomADe_AFR_AF`, `gnomADg_AFR_AF`, `gnomAD_AF_afr`) alongside the global ones, so
 frequency filtering is appropriate for African-ancestry families. The `stat3_*`,
 `lof_mechanism_genes`, and `cnv_priority_genes` keys are the **gene-specific rules**: they
 bias the tiering toward known disease mechanisms, and you extend them (or replace them for a
-different disease area) purely in configuration.
+different disease area) purely in configuration. The `disease_name`, `panel_name`, and
+`gene_clinical_notes` keys are the **report-content** settings that make the reports
+disease-agnostic (§11): they supply the disease/panel names and the per-gene counseling
+notes shown in the clinician and publication reports, with nothing disease-specific baked
+into the templates. The shipped `gene_clinical_notes` entries (DOCK8, STAT3) are illustrative
+examples of the format only.
 
 # 9. Interpretation logic in detail
 
@@ -561,17 +569,29 @@ FamilyForge ships **three report styles**, all as Jinja2 templates under
 - **`clinical_letterhead.{html,md}.j2`** — rendered by `clinical_report.py`, the
   institutional letterhead document.
 
-**Honest note on disease framing.** The **letterhead engine is fully disease-agnostic** —
-the disease name, panel name, methods wording, sample labels, and management text all come
-from the `report_config` YAML, so it produces a correct report for any disease. The
-**clinician and publication templates, by contrast, currently carry HIES-oriented framing
-text**: fixed titles ("…Suspected Hyper-IgE Syndrome"), a couple of gene-specific clinical-
-implication bullets (DOCK8 → HSCT; STAT3 → Job-syndrome management), and an illustrative
-methods paragraph naming a specific capture kit / VEP cache version. The *data* in these
-reports (candidates, tiers, evidence, QC, panel) is fully general and driven by your inputs;
-only that surrounding narrative is HIES-specific. If you run a non-HIES panel, prefer the
-letterhead report for clinical use, and treat the fixed narrative in the other two as a
-template to adapt. This is a documentation-honest limitation, not a defect in the analysis.
+**All three report styles are disease-agnostic and config-driven.** No disease, panel, or
+gene name is hardcoded in any template. The wording is supplied through configuration and
+the report YAMLs:
+
+- **`clinician` / `publication` templates** read `disease_name`, `panel_name`, and the
+  `gene_clinical_notes` map from the run config (`config/default.yaml`, overridable with
+  `--config`), threaded into the report context as `meta.disease_name`, `meta.panel_name`,
+  and `meta.gene_clinical_notes`. Titles, the summary line, the panel-name heading, and the
+  phenotype-correlation note all interpolate these values. Per-gene clinical/counseling text
+  is **data-driven**: for the top candidate gene, the template emits the matching
+  `gene_clinical_notes` entry if one exists, and nothing otherwise — so counseling notes are
+  configured, never coded. Missing values degrade gracefully to neutral defaults
+  (`the suspected condition`, `custom`).
+- **`clinical_letterhead` template** (letterhead engine) takes its disease name, panel name,
+  sample labels, methods wording, and management text from the `report_config` YAML, exactly
+  as before.
+
+To adapt the reports to your disease area, set `disease_name`, `panel_name`, and
+`gene_clinical_notes` in a `--config` YAML (and the corresponding fields in the letterhead
+`report_config`). The bundled defaults ship two illustrative `gene_clinical_notes` entries
+(DOCK8, STAT3) purely as **examples** of the format; replace them with notes appropriate to
+your panel. The methods/provenance paragraph retains generic tool-provenance wording
+(CallForge/FamilyForge/VEP/GATK) with no disease- or gene-specific phrasing.
 
 The letterhead template is designed for print: A4 geometry, a repeating banner header, the
 P→LP→VUS→LB→B colour scale, a variant-detail table, interpretation and recommendations, a
@@ -649,8 +669,10 @@ printed in every report) and the config file alongside your results.
   the panel are not evaluated.
 - **Pragmatic tiering.** The A/B/C rubric is a triage signal, not the full ACMG framework;
   it does not enumerate every ACMG criterion or compute a formal combined classification.
-- **Report framing.** The clinician/publication templates carry HIES-oriented narrative
-  (§11); the letterhead engine is disease-agnostic.
+- **Report content is configured, not inferred.** All report styles are disease-agnostic
+  (§11); the disease/panel names and per-gene counseling notes are supplied via config, so
+  set `disease_name`, `panel_name`, and `gene_clinical_notes` for your disease area rather
+  than relying on the neutral defaults.
 - **CNV depth.** CNV cross-check surfaces deletions overlapping panel genes from an external
   caller's output; it does not itself call CNVs and requires orthogonal confirmation.
 

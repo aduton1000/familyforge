@@ -13,13 +13,13 @@
  code{background:#f2f2f2;padding:1px 4px;border-radius:3px}
 </style></head><body>
 <h1>{{ meta.study }} — Clinical Genetics Report</h1>
-<p class="sub">Hyper-IgE syndrome (HIES) exome investigation · generated {{ meta.date }} · familyforge v{{ version }}</p>
+<p class="sub">Family-based investigation of {{ meta.disease_name or 'the suspected condition' }} · generated {{ meta.date }} · familyforge v{{ version }}</p>
 
 <div class="note"><b>Summary.</b>
 {% if tierA %}{{ tierA|length }} high-priority (Tier A) candidate finding(s) identified.
 The leading candidate is <b>{{ tierA[0].gene }}</b> ({{ tierA[0].zygosity }}, {{ tierA[0].model|replace('_',' ') }}).
 {% elif tierB %}No Tier A finding; {{ tierB|length }} Tier B candidate(s) of uncertain significance require review.
-{% else %}No high-confidence candidate in the HIES panel met reporting criteria; see caveats and consider re-phenotyping / extended analysis.
+{% else %}No high-confidence candidate in the {{ meta.panel_name or 'custom' }} panel met reporting criteria; see caveats and consider re-phenotyping / extended analysis.
 {% endif %}
 </div>
 
@@ -49,11 +49,10 @@ The leading candidate is <b>{{ tierA[0].gene }}</b> ({{ tierA[0].zygosity }}, {{
 
 <h2>Clinical implications & suggested next steps</h2>
 <ul>
-{% if top and top.gene == 'DOCK8' %}<li><b>DOCK8 deficiency</b> carries a severe infection/malignancy course — evaluate for <b>haematopoietic stem-cell transplant (HSCT)</b>, and confirm any deletion by MLPA/aCGH.</li>{% endif %}
-{% if top and top.gene == 'STAT3' %}<li><b>STAT3 (AD-HIES / Job syndrome)</b> — prophylactic anti-staphylococcal + antifungal management; monitor lung/connective-tissue features.</li>{% endif %}
+{% if top %}{% set _gnote = (meta.get('gene_clinical_notes', {}) or {}).get(top.gene) %}{% if _gnote %}<li><b>{{ top.gene }}</b> — {{ _gnote }}</li>{% endif %}{% endif %}
 <li>Confirm any reported variant by orthogonal method (Sanger for SNV/indel; MLPA/aCGH for CNV) before clinical action.</li>
-<li>Consider obtaining paternal DNA to confirm inheritance / phase (father not sequenced here).</li>
-<li>Correlate with immunology: serum IgE, eosinophils, infection spectrum (bacterial vs viral), dental/skeletal signs, platelet count.</li>
+<li>Consider obtaining any missing parental DNA to confirm inheritance / phase (e.g. where a parent was not sequenced).</li>
+<li>Correlate with the clinical phenotype and relevant biomarkers for {{ meta.disease_name or 'the suspected condition' }}.</li>
 </ul>
 
 <h2>Sample QC</h2>
@@ -62,9 +61,9 @@ The leading candidate is <b>{{ tierA[0].gene }}</b> ({{ tierA[0].zygosity }}, {{
 {% for k,v in qc.pairwise.items() %}<tr><td>Relatedness — {{ k }}</td><td>genotype concordance {{ v.concordance }} over {{ v.n_sites }} sites</td></tr>{% endfor %}
 </table>
 
-<div class="caveat"><b>Caveats.</b> Father not sequenced — some inheritance/phase calls are inferred and unconfirmed.
-gnomAD allele frequencies are from the VEP cache; genome-wide gnomAD/dbNSFP were unavailable, so
-common-variant filtering and some in-silico scores are limited. Tier A/B variants are candidates
+<div class="caveat"><b>Caveats.</b> Where a parent was not sequenced, some inheritance/phase calls are inferred and unconfirmed.
+Population allele frequencies and some in-silico scores are bounded by the annotation databases available upstream, so
+common-variant filtering may be limited. Tier A/B variants are candidates
 pending orthogonal confirmation and ACMG classification by a clinical laboratory. This report is a
 research analysis, not a diagnostic result.</div>
 </body></html>

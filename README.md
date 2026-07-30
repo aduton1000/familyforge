@@ -164,9 +164,11 @@ troubleshooting, and reproducibility.
 Candidates are research outputs pending laboratory ACMG classification and orthogonal
 confirmation (Sanger / MLPA / aCGH). Interpretation quality depends on the upstream
 annotation (population-AF completeness, in-silico coverage). A missing parent makes some
-phase/de-novo calls inferred, not confirmed. The primary pass is panel-restricted. The
-letterhead engine is disease-agnostic; the clinician/publication templates currently carry
-HIES-oriented narrative framing (the analysis and data are fully general) — see manual §11.
+phase/de-novo calls inferred, not confirmed. The primary pass is panel-restricted. All
+report styles are fully disease-agnostic and config-driven: the disease name, panel name,
+and per-gene clinical notes are supplied via config (`disease_name`, `panel_name`,
+`gene_clinical_notes`) and the letterhead `report_config`, with nothing disease-specific
+hardcoded in the templates — see manual §11.
 
 ## Citation
 

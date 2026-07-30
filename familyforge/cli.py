@@ -101,7 +101,11 @@ def main(argv=None):
             "vcf": os.path.abspath(a.vcf), "panel": os.path.abspath(a.panel),
             "n_panel_genes": len(panel), "n_cnv_rows": len(cnv_rows),
             "provenance": prov,
-            "af_dominant_max": cfg["af_dominant_max"], "af_recessive_max": cfg["af_recessive_max"]}
+            "af_dominant_max": cfg["af_dominant_max"], "af_recessive_max": cfg["af_recessive_max"],
+            # disease-agnostic report content (drives report wording; override via --config)
+            "disease_name": cfg.get("disease_name") or "the suspected condition",
+            "panel_name": cfg.get("panel_name") or "custom",
+            "gene_clinical_notes": cfg.get("gene_clinical_notes") or {}}
 
     ctx = build_context(cands, qc, fam, panel, meta)
     written = render(ctx, a.outdir)
