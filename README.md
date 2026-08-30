@@ -1,6 +1,16 @@
-# FamilyForge
+<!-- banner -->
+![FamilyForge](assets/banner.png)
 
-**Pedigree-aware Mendelian + ACMG-style interpretation and multi-audience reporting on a family callset.**
+<p align="center">
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-2b7bb9">
+  <img alt="python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
+  <img alt="platforms" src="https://img.shields.io/badge/platforms-Linux%20%7C%20macOS-8A6D1C">
+  <img alt="status" src="https://img.shields.io/badge/status-research-9E2B25">
+</p>
+
+<p align="center"><b>Pedigree-aware Mendelian + ACMG-style interpretation and multi-audience reporting on a family callset.</b></p>
+
+---
 
 FamilyForge is a pure-Python clinical variant-interpretation tool. Given one family's
 annotated multi-sample VCF, a pedigree, and a curated gene panel, it produces
@@ -29,6 +39,21 @@ sequenced) rather than confirmed.
 CallForge produces the annotated joint callset; FamilyForge consumes it (the annotated
 `VCF.gz`, and optionally `cnv_calls.tsv` and `provenance.json`) and interprets it for one
 family.
+
+## How it works
+
+```mermaid
+flowchart LR
+  VCF([annotated VCF]) --> GATE[genotype-quality<br/>gating]
+  PED([pedigree]) --> MODELS
+  PANEL([gene panel]) --> MODELS
+  GATE --> MODELS[Mendelian models<br/>de-novo · dominant · AR · comp-het · X-linked]
+  MODELS --> ACMG[ACMG-style tiering<br/>A / B / C]
+  CNV([CNV calls]) --> XCHK[CNV cross-check]
+  ACMG --> XCHK
+  XCHK --> QC[genotype QC<br/>relatedness · MZ · sex]
+  QC --> REP[reports<br/>clinician · publication · letterhead]
+```
 
 ## Features
 
