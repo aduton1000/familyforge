@@ -41,6 +41,3 @@ scratch/
 .idea/
 .vscode/
 .DS_Store
-
-# Clinical letterhead templates — kept private/local (branding); supply your own to render the letterhead report
-familyforge/templates/clinical_letterhead.*.j2
