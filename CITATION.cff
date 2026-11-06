@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use FamilyForge, please cite it as below."
-title: "FamilyForge: pedigree-aware Mendelian and ACMG-style interpretation of a family callset (VCF + pedigree + panel → ranked candidates + reports)"
+title: "FamilyForge: pedigree-aware Mendelian and ACMG-style interpretation of a family callset (VCF + pedigree + panel -> ranked candidates + reports)"
 abstract: >-
   FamilyForge is a disease-agnostic, pure-Python clinical variant-interpretation tool
   that takes a multi-sample annotated VCF, a PED pedigree, and a gene panel for one
@@ -14,11 +14,14 @@ abstract: >-
 authors:
   - family-names: "Adu"
     given-names: "Bright"
+    alias: "aduton1000"
+    orcid: "https://orcid.org/0000-0002-3622-2137"
     affiliation: "Genomics & Bioinformatics Core, Noguchi Memorial Institute for Medical Research, University of Ghana, Legon, Ghana"
 version: 0.1.0
 date-released: "2026-07-30"
 license: MIT
 type: software
+repository-code: "https://github.com/aduton1000/familyforge"
 keywords:
   - bioinformatics
   - clinical genomics
@@ -30,7 +33,9 @@ keywords:
 references:
   - type: software
     title: "CallForge: a targeted-capture germline analysis pipeline"
+    repository-code: "https://github.com/aduton1000/callforge"
     notes: "Upstream analysis pipeline; FamilyForge consumes its annotated joint VCF, cnv_calls.tsv, and provenance.json."
   - type: software
-    title: "CaptureForge: hybridization-capture probe design pipeline"
+    title: "CaptureForge: a general-purpose, organism-agnostic hybridization-capture probe (bait) design pipeline"
+    repository-code: "https://github.com/aduton1000/captureforge"
     notes: "Design-stage pipeline at the head of the forge family (CaptureForge -> CallForge -> FamilyForge)."
